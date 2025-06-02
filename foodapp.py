@@ -1,20 +1,17 @@
 import streamlit as st
 import pandas as pd
 
+url = "https://raw.githubusercontent.com/LeeL2000/fastfood/main/FastFoodNutritionMenuV2.csv"
+
 try:
-    df = pd.read_csv("FastFoodNutritionMenuV2.csv", encoding='utf-8')  # או 'latin1'
-except Exception as e:
-    st.error(f"שגיאה בטעינת הקובץ: {e}")
-    st.stop()
+    df = pd.read_csv(url, encoding='utf-8-sig')
+except UnicodeDecodeError:
+    df = pd.read_csv(url, encoding='ISO-8859-1')
 
 st.title("🧃 Fast Food Nutrition Viewer")
 
 st.subheader("🔍 תצוגה מקדימה של הנתונים")
 st.dataframe(df)
-
-if 'Company' not in df.columns:
-    st.error("העמודה 'Company' לא נמצאה בקובץ הנתונים.")
-    st.stop()
 
 companies = df['Company'].unique()
 selected_company = st.selectbox("בחרי חברה:", companies)
