@@ -2,9 +2,12 @@ import streamlit as st
 import pandas as pd
 
 url = "https://raw.githubusercontent.com/LeeL2000/fastfood/main/FastFoodNutritionMenuV2.csv"
+df = pd.read_csv(url, encoding='latin1')
+
+url = "https://raw.githubusercontent.com/LeeL2000/fastfood/main/FastFoodNutritionMenuV2.csv"
 
 try:
-    df = pd.read_csv(url, encoding='utf-8-sig')
+df = pd.read_csv(url, encoding='latin1')
 except UnicodeDecodeError:
     df = pd.read_csv(url, encoding='ISO-8859-1')
 
