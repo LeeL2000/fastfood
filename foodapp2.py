@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
 
-url = "https://raw.githubusercontent.com/LeeL2000/fastfood/main/FastFoodNutritionMenuV2.csv"
+# הקישור להורדה ישירה מהקובץ שלך בגוגל דרייב
+url = "https://drive.google.com/uc?export=download&id=1cPe6NLZP1iO2Cse-8yIVdRzrdAvaqhHo"
 
 try:
-    df = pd.read_csv(url, encoding='utf-8')
+    df = pd.read_csv(url, encoding='utf-8-sig', on_bad_lines='skip')
 except UnicodeDecodeError:
-    df = pd.read_csv(url, encoding='latin1')
+    df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
 
 st.title("🧃 Fast Food Nutrition Viewer")
 
