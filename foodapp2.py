@@ -1,13 +1,20 @@
 import streamlit as st
 import pandas as pd
+import requests
+from io import StringIO
 
-# הקישור להורדה ישירה מהקובץ שלך בגוגל דרייב
 url = "https://drive.google.com/uc?export=download&id=1cPe6NLZP1iO2Cse-8yIVdRzrdAvaqhHo"
 
+response = requests.get(url)
+response.encoding = 'utf-8'  # אפשר לשנות ל'latin1' אם צריך
+
 try:
-    df = pd.read_csv(url, encoding='utf-8-sig', on_bad_lines='skip')
+    data = StringIO(response.text)
+    df = pd.read_csv(data)
 except UnicodeDecodeError:
-    df = pd.read_csv(url, encoding='latin1', on_bad_lines='skip')
+    response.encoding = 'latin1'
+    data = StringIO(response.text)
+    df = pd.read_csv(data)
 
 st.title("🧃 Fast Food Nutrition Viewer")
 
