@@ -3,31 +3,29 @@ import pandas as pd
 import requests
 from io import BytesIO
 
-# הקישור להורדת הקובץ מגוגל דרייב
+# הקישור לקובץ CSV המאוחסן בדרייב
 url = "https://drive.google.com/uc?export=download&id=1cPe6NLZP1iO2Cse-8yIVdRzrdAvaqhHo"
 
-# בקשת הורדה
-response = requests.get(url)
-
-# קריאה באמצעות BytesIO כדי לטפל בקידוד
+# ניסיון להוריד ולטעון את הקובץ
 try:
-    df = pd.read_csv(BytesIO(response.content), encoding='utf-8')
-except UnicodeDecodeError:
-    df = pd.read_csv(BytesIO(response.content), encoding='latin1')
+    response = requests.get(url)
+    df = pd.read_csv(BytesIO(response.content), encoding='latin1', on_bad_lines='skip')
+except Exception as e:
+    st.error(f"❌ שגיאה בקריאת הקובץ: {e}")
+    st.stop()
 
-# כותרת האפליקציה
+# כותרת
 st.title("🧃 Fast Food Nutrition Viewer")
 
-# הצגת טבלה כללית
+# הצגת טבלת הנתונים
 st.subheader("🔍 תצוגה מקדימה של הנתונים")
 st.dataframe(df)
 
-# סינון לפי חברה
+# תיבת בחירה לפי חברה
 companies = df['Company'].unique()
 selected_company = st.selectbox("בחרי חברה:", companies)
-filtered_df = df[df['Company'] == selected_company]
 
-# הצגת תוצאות הסינון
+# סינון והצגה
+filtered_df = df[df['Company'] == selected_company]
 st.subheader(f"📊 פרטי תזונה של {selected_company}")
 st.dataframe(filtered_df)
-
