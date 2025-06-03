@@ -13,10 +13,10 @@ st.set_page_config(page_title="Fast Food Nutrition Dashboard", layout="wide", pa
 st.markdown("""
     <style>
     body {
-        background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+        background: linear-gradient(to right, #fff5e6, #ffe0cc);
     }
     .stApp {
-        background: #ffffff;
+        background: #fffaf2;
         font-family: 'Segoe UI', sans-serif;
         padding: 20px;
     }
@@ -24,10 +24,10 @@ st.markdown("""
         padding-top: 2rem;
     }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #2c3e50;
+        color: #cc5200;
     }
     .card {
-        background-color: #fdfdfd;
+        background-color: #fff8f0;
         padding: 15px;
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
@@ -39,12 +39,12 @@ st.markdown("""
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
     }
     .stSidebar {
-        background: #f0f4f8;
+        background: #fff2e6;
     }
     .stTabs [data-baseweb="tab"] {
         font-size: 18px;
         font-weight: bold;
-        color: #2c3e50;
+        color: #cc5200;
     }
     .download-button {
         background-color: #ffcc99;
@@ -57,12 +57,30 @@ st.markdown("""
     .download-button:hover {
         background-color: #ffb366;
     }
-    .custom-tooltip {
-        background-color: #fff8dc;
-        border: 1px solid #d3d3d3;
-        padding: 8px;
-        border-radius: 8px;
-        font-size: 14px;
+    .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+    }
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -103,16 +121,13 @@ filtered_df = full_df[(full_df['Caloric Value'] >= calories_range[0]) &
 
 if search_text:
     suggestions = full_df['food'].dropna().unique()
+    st.sidebar.write("Suggestions:", [s for s in suggestions if search_text.lower() in s.lower()][:5])
     filtered_df = filtered_df[filtered_df['food'].str.contains(search_text, case=False, na=False)]
-    st.sidebar.markdown("Suggested matches:")
-    for s in suggestions:
-        if search_text.lower() in s.lower():
-            st.sidebar.markdown(f"- {s}")
 
 # --- Header ---
 st.title("🍔 Fast Food Nutrition Dashboard")
 st.markdown("""
-Analyze and visualize nutritional information from various fast food items. Use the buttons below to explore calories, protein, fat, sodium and more.
+Analyze and visualize nutritional information from various fast food items. Use the tabs below to explore calories, protein, fat, sodium and more.
 """)
 
 # --- Download filtered CSV ---
@@ -124,59 +139,58 @@ def get_table_download_link(df):
 
 st.markdown(get_table_download_link(filtered_df), unsafe_allow_html=True)
 
-# --- Interactive Graph Selector ---
-st.subheader("📊 Choose a Visualization")
-graph_choice = st.radio("Select a Graph:", (
-    "📋 Data Preview",
-    "🍟 Avg Calories, Sodium, Fat",
-    "🍗 Protein Distribution",
-    "📊 Avg Calories by Food",
-    "🔥 Fat-Calorie % by Source",
-    "🧪 Nutrient Correlation Heatmap"
-))
+# --- Chart Selector ---
+chart_type = st.radio("📊 Choose Chart to Display:", ["Overview Table", "Avg Calories, Sodium, Fat", "Protein Distribution", "Avg Calories by Food", "Fat-Calorie % by Source", "Nutrient Correlation Heatmap"], horizontal=True)
 
-if graph_choice == "📋 Data Preview":
+if chart_type == "Overview Table":
+    st.subheader("📋 Filtered Data Preview")
     st.dataframe(filtered_df.head(20))
 
-elif graph_choice == "🍟 Avg Calories, Sodium, Fat":
+elif chart_type == "Avg Calories, Sodium, Fat":
+    st.subheader("🍟 Average Calories, Sodium and Fat")
     fig1, ax1 = plt.subplots(figsize=(8, 4))
-    filtered_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax1, color=['#9ecae1', '#fdd0a2', '#fdae6b'])
+    filtered_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax1, color=['#ffb366', '#fdd0a2', '#fdae6b'])
     ax1.set_title("Average Values of Calories, Sodium and Fat")
     ax1.set_xlabel("Amount")
     st.pyplot(fig1)
 
-elif graph_choice == "🍗 Protein Distribution":
+elif chart_type == "Protein Distribution":
+    st.subheader("🍗 Protein Distribution")
     fig2, ax2 = plt.subplots(figsize=(8, 4))
     sns.histplot(filtered_df['Protein'], bins=30, kde=True, color="#a1d99b", ax=ax2)
     ax2.set_title("Distribution of Protein Values")
     ax2.set_xlabel("Protein (g)")
     st.pyplot(fig2)
 
-elif graph_choice == "📊 Avg Calories by Food":
+elif chart_type == "Avg Calories by Food":
+    st.subheader("📊 Average Calories by Food")
     avg_cal = filtered_df.groupby('food')['Caloric Value'].mean().sort_values(ascending=False).head(15)
     fig3, ax3 = plt.subplots(figsize=(10, 5))
-    avg_cal.plot(kind='bar', color='#c6dbef', ax=ax3)
+    avg_cal.plot(kind='bar', color='#ffcc99', ax=ax3)
     ax3.set_ylabel("Average Calories")
     ax3.set_title("Top 15 Foods by Average Caloric Value")
     plt.xticks(rotation=45, ha='right')
     st.pyplot(fig3)
 
-elif graph_choice == "🔥 Fat-Calorie % by Source":
+elif chart_type == "Fat-Calorie % by Source":
+    st.subheader("🔥 Fat-Calorie % by Source")
     if 'FatCaloriesPercentage' in filtered_df.columns and 'Source File' in filtered_df.columns:
         avg_pct = filtered_df.groupby('Source File')['FatCaloriesPercentage'].mean().sort_values()
         fig4, ax4 = plt.subplots(figsize=(8, 5))
-        avg_pct.plot(kind='barh', color='#ffcc99', ax=ax4)
+        avg_pct.plot(kind='barh', color='#ffa366', ax=ax4)
         ax4.set_title("Fat-Calorie % by Source")
         st.pyplot(fig4)
 
-elif graph_choice == "🧪 Nutrient Correlation Heatmap":
+elif chart_type == "Nutrient Correlation Heatmap":
+    st.subheader("🧪 Nutrient Correlation Heatmap")
     corr = filtered_df[numeric_cols].corr()
     fig5, ax5 = plt.subplots(figsize=(12, 10))
-    sns.heatmap(corr, cmap='coolwarm', annot=True, fmt=".2f", linewidths=0.5, ax=ax5)
+    sns.heatmap(corr, cmap='Oranges', annot=True, fmt=".2f", linewidths=0.5, ax=ax5)
     ax5.set_title("Correlation Between Nutritional Variables")
     st.pyplot(fig5)
 
 # --- Footer ---
 st.markdown("---")
 st.markdown("Made with ❤️ by Lee Lior · Reichman University 2025")
+
 
