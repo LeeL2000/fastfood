@@ -9,14 +9,21 @@ import base64
 # --- Page config ---
 st.set_page_config(page_title="Fast Food Nutrition Dashboard", layout="wide", page_icon="🍔")
 
-# --- Enhanced Styling CSS ---
+# --- Enhanced Styling CSS with animated background and hover effects ---
 st.markdown("""
     <style>
     body {
-        background: linear-gradient(to right, #fff6e5, #ffe0b2);
+        background: linear-gradient(-45deg, #fdfcfb, #e2d1c3, #ffecd2, #fcb69f);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+    }
+    @keyframes gradientBG {
+        0% {background-position: 0% 50%;}
+        50% {background-position: 100% 50%;}
+        100% {background-position: 0% 50%;}
     }
     .stApp {
-        background: #ffffff;
+        background: rgba(255, 255, 255, 0.95);
         font-family: 'Segoe UI', sans-serif;
         padding: 20px;
     }
@@ -24,37 +31,22 @@ st.markdown("""
         padding-top: 2rem;
     }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #4e342e;
+        color: #2c3e50;
     }
     .card {
-        background-color: #fff8e1;
+        background-color: #fdfdfd;
         padding: 15px;
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         margin-bottom: 16px;
-        transition: all 0.2s ease-in-out;
+        transition: all 0.3s ease-in-out;
     }
     .card:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-    }
-    .stSidebar {
-        background: #fff3e0;
-    }
-    .stTabs [data-baseweb="tab"] {
-        font-size: 18px;
-        font-weight: bold;
-        background-color: #ffe0b2;
-        color: #4e342e;
-        border-radius: 10px 10px 0 0;
-        margin-right: 4px;
-        padding: 10px;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: #ffcc80;
+        transform: scale(1.03);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     }
     .download-button {
-        background-color: #ffcc80;
+        background-color: #ffcc99;
         color: black;
         border-radius: 5px;
         padding: 6px 10px;
@@ -62,20 +54,19 @@ st.markdown("""
         font-weight: bold;
     }
     .download-button:hover {
-        background-color: #ffb74d;
+        background-color: #ffb366;
     }
-    @keyframes slideIn {
-        from {
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
+    .tab-style div[data-baseweb="tab"] {
+        background: #fceabb;
+        margin-right: 8px;
+        border-radius: 12px;
+        padding: 10px;
+        color: #333;
+        transition: 0.2s;
     }
-    .stApp h1 {
-        animation: slideIn 0.8s ease-in-out;
+    .tab-style div[data-baseweb="tab"]:hover {
+        background: #f8b500;
+        color: white;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -107,7 +98,10 @@ prot_min, prot_max = int(full_df['Protein'].min()), int(full_df['Protein'].max()
 st.sidebar.subheader("🔍 Filter Items")
 calories_range = st.sidebar.slider("Calories Range", min_value=cal_min, max_value=cal_max, value=(cal_min, cal_max))
 protein_range = st.sidebar.slider("Protein Range (g)", min_value=prot_min, max_value=prot_max, value=(prot_min, prot_max))
-search_text = st.sidebar.text_input("Search for Food (e.g. burger, salad)", "")
+
+# --- Smart Search Box ---
+search_options = full_df['food'].dropna().unique()
+search_text = st.sidebar.selectbox("Search for Food", options=[""] + sorted(search_options.tolist()))
 
 filtered_df = full_df[(full_df['Caloric Value'] >= calories_range[0]) &
                       (full_df['Caloric Value'] <= calories_range[1]) &
@@ -132,50 +126,50 @@ def get_table_download_link(df):
 
 st.markdown(get_table_download_link(filtered_df), unsafe_allow_html=True)
 
-# --- Tabs ---
-tabs = st.tabs([
-    "📋 Overview", "🍟 Avg Calories, Sodium, Fat", "🍗 Protein Distribution", "📊 Avg Calories by Food", "🔥 Fat-Calorie % by Source", "🧪 Nutrient Correlation"])
+# --- Interactive Buttons for Charts ---
+st.markdown("## 📊 Choose a Visualization")
+chart_option = st.radio("Select Chart Type", ["Overview", "Avg Calories/Sodium/Fat", "Protein Distribution", "Avg Calories by Food", "Fat-Calorie % by Source", "Nutrient Correlation"], horizontal=True)
 
-with tabs[0]:
+if chart_option == "Overview":
     st.subheader("📋 Filtered Data Preview")
     st.dataframe(filtered_df.head(20))
 
-with tabs[1]:
+elif chart_option == "Avg Calories/Sodium/Fat":
     st.subheader("🍟 Average Calories, Sodium and Fat")
     fig1, ax1 = plt.subplots(figsize=(8, 4))
-    filtered_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax1, color=['#ffcc80', '#ffab91', '#ffe082'])
+    filtered_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax1, color=['#9ecae1', '#fdd0a2', '#fdae6b'])
     ax1.set_title("Average Values of Calories, Sodium and Fat")
     ax1.set_xlabel("Amount")
     st.pyplot(fig1)
 
-with tabs[2]:
+elif chart_option == "Protein Distribution":
     st.subheader("🍗 Protein Distribution")
     fig2, ax2 = plt.subplots(figsize=(8, 4))
-    sns.histplot(filtered_df['Protein'], bins=30, kde=True, color="#ffb74d", ax=ax2)
+    sns.histplot(filtered_df['Protein'], bins=30, kde=True, color="#a1d99b", ax=ax2)
     ax2.set_title("Distribution of Protein Values")
     ax2.set_xlabel("Protein (g)")
     st.pyplot(fig2)
 
-with tabs[3]:
+elif chart_option == "Avg Calories by Food":
     st.subheader("📊 Average Calories by Food")
     avg_cal = filtered_df.groupby('food')['Caloric Value'].mean().sort_values(ascending=False).head(15)
     fig3, ax3 = plt.subplots(figsize=(10, 5))
-    avg_cal.plot(kind='bar', color='#ffe082', ax=ax3)
+    avg_cal.plot(kind='bar', color='#c6dbef', ax=ax3)
     ax3.set_ylabel("Average Calories")
     ax3.set_title("Top 15 Foods by Average Caloric Value")
     plt.xticks(rotation=45, ha='right')
     st.pyplot(fig3)
 
-with tabs[4]:
+elif chart_option == "Fat-Calorie % by Source":
     st.subheader("🔥 Fat-Calorie % by Source")
     if 'FatCaloriesPercentage' in filtered_df.columns and 'Source File' in filtered_df.columns:
         avg_pct = filtered_df.groupby('Source File')['FatCaloriesPercentage'].mean().sort_values()
         fig4, ax4 = plt.subplots(figsize=(8, 5))
-        avg_pct.plot(kind='barh', color='#ffab91', ax=ax4)
+        avg_pct.plot(kind='barh', color='#ffcc99', ax=ax4)
         ax4.set_title("Fat-Calorie % by Source")
         st.pyplot(fig4)
 
-with tabs[5]:
+elif chart_option == "Nutrient Correlation":
     st.subheader("🧪 Nutrient Correlation Heatmap")
     corr = filtered_df[numeric_cols].corr()
     fig5, ax5 = plt.subplots(figsize=(12, 10))
@@ -186,5 +180,4 @@ with tabs[5]:
 # --- Footer ---
 st.markdown("---")
 st.markdown("Made with ❤️ by Lee Lior · Reichman University 2025")
-
 
