@@ -11,7 +11,7 @@ st.markdown("This interactive dashboard explores nutritional information across 
 @st.cache_data
 
 def load_data():
-    url = 'https://raw.githubusercontent.com/your-username/your-repo/main/FOOD-DATA-COMBINED.csv'  # Update this to the correct path
+    url = "https://raw.githubusercontent.com/leel2000/fastfood/main/FOOD-DATA-COMBINED.csv"
     df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
