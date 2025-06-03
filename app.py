@@ -3,71 +3,85 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Title and Intro
+# --- Page config ---
+st.set_page_config(page_title="Fast Food Nutrition Dashboard", layout="wide")
+
+# --- Header ---
 st.title("🍔 Fast Food Nutrition Analysis")
-st.markdown("This interactive dashboard explores nutritional information across various fast food items. Insights include calories, fat, sodium, protein, and more.")
+st.markdown("""
+This interactive app presents nutritional insights from a combined fast food dataset.
+Explore calories, fat, protein, sodium, and vitamin correlations through visualizations.
+""")
 
-# Load unified dataset from GitHub
+# --- Load data ---
 @st.cache_data
-
 def load_data():
     url = "https://raw.githubusercontent.com/leel2000/fastfood/main/FOOD-DATA-COMBINED.csv"
     df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
-
-    numeric_cols = ['Caloric Value', 'Fat', 'Saturated Fats', 'Carbohydrates',
-                    'Sugars', 'Protein', 'Sodium']
-
-    for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-
-    df['FatCalories'] = df['Fat'] * 9
-    df['FatCaloriesPercentage'] = (df['FatCalories'] / df['Caloric Value']) * 100
-    df = df.dropna(subset=['Caloric Value', 'FatCaloriesPercentage'])
+    df = df.drop(columns=[col for col in df.columns if 'Unnamed' in col])
     return df
 
-# Load and clean data
-df = load_data()
-st.dataframe(df.head())
+full_df = load_data()
 
-# Graph 1: Average Calories, Sodium and Fat
-st.subheader("1. Average Calories, Sodium and Fat")
-fig1, ax1 = plt.subplots()
-df[['Caloric Value', 'Sodium', 'Fat']].mean().sort_values().plot(kind='barh', ax=ax1, color=['#FF9999', '#FFCC99', '#99CCFF'])
-ax1.set_title("Average Values of Calories, Sodium and Fat")
-st.pyplot(fig1)
+# --- Prepare Data ---
+numeric_cols = full_df.select_dtypes(include=['float64', 'int64']).columns
 
-# Graph 2: Protein Distribution
-st.subheader("2. Protein Distribution")
-fig2, ax2 = plt.subplots()
-sns.histplot(df['Protein'], bins=20, kde=True, ax=ax2, color='#66C2A5')
-ax2.set_title("Distribution of Protein Values")
-st.pyplot(fig2)
+# Optional calculated column
+if 'Calories fromFat' in full_df.columns and 'Caloric Value' in full_df.columns:
+    full_df['FatCaloriesPercentage'] = (full_df['Calories fromFat'] / full_df['Caloric Value']) * 100
 
-# Graph 3: Average Calories by Food Group
-st.subheader("3. Average Calories by Food Group")
-if 'Source File' in df.columns:
-    fig3, ax3 = plt.subplots()
-    df.groupby('Source File')['Caloric Value'].mean().sort_values().plot(kind='bar', ax=ax3, color='#8DA0CB')
-    ax3.set_title("Average Calories by Food Source")
-    st.pyplot(fig3)
+# --- Section selector ---
+section = st.selectbox("Choose a visualization:", (
+    "1. Average Calories, Sodium and Fat",
+    "2. Protein Distribution",
+    "3. Average Calories by Food Type",
+    "4. Fat Calorie Percentage by Source",
+    "5. Nutrient Correlation Heatmap"
+))
 
-# Graph 4: Fat Calories Percentage by Source
-st.subheader("4. Fat Calories % by Source")
-if 'Source File' in df.columns:
-    fig4, ax4 = plt.subplots()
-    df.groupby('Source File')['FatCaloriesPercentage'].mean().sort_values().plot(kind='barh', ax=ax4, color='#FC8D62')
-    ax4.set_title("Avg % of Calories from Fat by Food Source")
-    st.pyplot(fig4)
+# --- Visualizations ---
+if section.startswith("1"):
+    st.header("1. Average Calories, Sodium and Fat")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    full_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax, color=['#9ecae1', '#fdd0a2', '#fdae6b'])
+    ax.set_title("Average Values of Calories, Sodium and Fat", fontsize=14)
+    ax.set_xlabel("Amount")
+    st.pyplot(fig)
 
-# Graph 5: Correlation Heatmap
-st.subheader("5. Nutrient Correlation Heatmap")
-numeric_df = df.select_dtypes(include=['float64', 'int64'])
-fig5, ax5 = plt.subplots(figsize=(10, 8))
-sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm', fmt=".2f", ax=ax5)
-ax5.set_title("Correlation Between Nutritional Variables")
-st.pyplot(fig5)
+elif section.startswith("2"):
+    st.header("2. Protein Distribution")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    sns.histplot(full_df['Protein'], bins=30, kde=True, color="#a1d99b", ax=ax)
+    ax.set_title("Distribution of Protein Values", fontsize=14)
+    ax.set_xlabel("Protein (g)")
+    st.pyplot(fig)
 
-# Footer
+elif section.startswith("3"):
+    st.header("3. Average Calories by Food")
+    avg_cal = full_df.groupby('food')['Caloric Value'].mean().sort_values(ascending=False).head(15)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    avg_cal.plot(kind='bar', color='#c6dbef', ax=ax)
+    ax.set_ylabel("Average Calories")
+    ax.set_title("Top 15 Foods by Average Caloric Value")
+    plt.xticks(rotation=45, ha='right')
+    st.pyplot(fig)
+
+elif section.startswith("4") and 'FatCaloriesPercentage' in full_df.columns:
+    st.header("4. Fat Calories Percentage by Source")
+    avg_pct = full_df.groupby('Source File')['FatCaloriesPercentage'].mean().sort_values()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    avg_pct.plot(kind='barh', color='#ffcc99', ax=ax)
+    ax.set_title("Average Fat-Calorie % by Source")
+    st.pyplot(fig)
+
+elif section.startswith("5"):
+    st.header("5. Nutrient Correlation Heatmap")
+    corr = full_df[numeric_cols].corr()
+    fig, ax = plt.subplots(figsize=(12, 10))
+    sns.heatmap(corr, cmap='coolwarm', annot=False, linewidths=0.5, ax=ax)
+    ax.set_title("Correlation Between Nutritional Variables", fontsize=14)
+    st.pyplot(fig)
+
+# --- Footer ---
 st.markdown("---")
-st.markdown("App created by Lee Lior · 2025 · Reichman University")
+st.markdown("Developed by Lee Lior · Reichman University · 2025")
