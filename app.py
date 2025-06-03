@@ -1,58 +1,73 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# פונקציה לטעינת הנתונים לפי גרסה
+# Title and Intro
+st.title("🍔 Fast Food Nutrition Analysis")
+st.markdown("This interactive dashboard explores nutritional information across various fast food items. Insights include calories, fat, sodium, protein, and more.")
+
+# Load unified dataset from GitHub
 @st.cache_data
-def load_data(version='V2'):
-    file_path = f"FastFoodNutritionMenu{version}.csv"
-    df = pd.read_csv(file_path)
 
-    # ניקוי שמות עמודות
+def load_data():
+    url = 'https://raw.githubusercontent.com/your-username/your-repo/main/FOOD-DATA-COMBINED.csv'  # Update this to the correct path
+    df = pd.read_csv(url)
     df.columns = df.columns.str.strip()
 
-    # המרה לעמודות מספריות (בהתאם לשמות מהקובץ שלך)
-    numeric_cols = ['Calories', 'Calories fromFat', 'Total Fat(g)', 'Saturated Fat(g)', 'Trans Fat(g)',
-                    'Cholesterol(mg)', 'Sodium (mg)', 'Carbs(g)', 'Fiber(g)', 'Sugars(g)', 'Protein(g)',
-                    'Weight WatchersPnts']
+    numeric_cols = ['Caloric Value', 'Fat', 'Saturated Fats', 'Carbohydrates',
+                    'Sugars', 'Protein', 'Sodium']
+
     for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    df['FatCalories'] = df['Fat'] * 9
+    df['FatCaloriesPercentage'] = (df['FatCalories'] / df['Caloric Value']) * 100
+    df = df.dropna(subset=['Caloric Value', 'FatCaloriesPercentage'])
     return df
 
-# כותרת האפליקציה
-st.title("🍔 ניתוח תפריטי מזון מהיר")
+# Load and clean data
+df = load_data()
+st.dataframe(df.head())
 
-# בחירת גרסת הדאטה
-version = st.selectbox("בחרי גרסת דאטה", options=["V2", "V3"])
+# Graph 1: Average Calories, Sodium and Fat
+st.subheader("1. Average Calories, Sodium and Fat")
+fig1, ax1 = plt.subplots()
+df[['Caloric Value', 'Sodium', 'Fat']].mean().sort_values().plot(kind='barh', ax=ax1, color=['#FF9999', '#FFCC99', '#99CCFF'])
+ax1.set_title("Average Values of Calories, Sodium and Fat")
+st.pyplot(fig1)
 
-# טעינת הדאטהסט הנבחר
-df = load_data(version)
+# Graph 2: Protein Distribution
+st.subheader("2. Protein Distribution")
+fig2, ax2 = plt.subplots()
+sns.histplot(df['Protein'], bins=20, kde=True, ax=ax2, color='#66C2A5')
+ax2.set_title("Distribution of Protein Values")
+st.pyplot(fig2)
 
-# בדיקה אם קיימת עמודת Company
-if 'Company' in df.columns:
-    company = st.selectbox("בחרי חברה", sorted(df['Company'].dropna().unique()))
-    filtered = df[df['Company'] == company]
+# Graph 3: Average Calories by Food Group
+st.subheader("3. Average Calories by Food Group")
+if 'Source File' in df.columns:
+    fig3, ax3 = plt.subplots()
+    df.groupby('Source File')['Caloric Value'].mean().sort_values().plot(kind='bar', ax=ax3, color='#8DA0CB')
+    ax3.set_title("Average Calories by Food Source")
+    st.pyplot(fig3)
 
-    # הצגת טבלה של הפריטים
-    st.subheader(f"📋 פריטים מתוך {company}")
-    columns_to_show = ['Item', 'Calories', 'Total Fat(g)', 'Sodium (mg)', 'Protein(g)', 'Carbs(g)']
-    existing_columns = [col for col in columns_to_show if col in filtered.columns]
-    st.dataframe(filtered[existing_columns])
+# Graph 4: Fat Calories Percentage by Source
+st.subheader("4. Fat Calories % by Source")
+if 'Source File' in df.columns:
+    fig4, ax4 = plt.subplots()
+    df.groupby('Source File')['FatCaloriesPercentage'].mean().sort_values().plot(kind='barh', ax=ax4, color='#FC8D62')
+    ax4.set_title("Avg % of Calories from Fat by Food Source")
+    st.pyplot(fig4)
 
-    # ממוצעים תזונתיים
-    st.subheader("📊 ממוצעים תזונתיים")
-    numeric_existing = filtered[existing_columns].select_dtypes(include='number').columns
-    if not numeric_existing.empty:
-        st.write(filtered.describe()[numeric_existing])
-    else:
-        st.info("אין עמודות מספריות זמינות להצגת ממוצעים.")
+# Graph 5: Correlation Heatmap
+st.subheader("5. Nutrient Correlation Heatmap")
+numeric_df = df.select_dtypes(include=['float64', 'int64'])
+fig5, ax5 = plt.subplots(figsize=(10, 8))
+sns.heatmap(numeric_df.corr(), annot=True, cmap='coolwarm', fmt=".2f", ax=ax5)
+ax5.set_title("Correlation Between Nutritional Variables")
+st.pyplot(fig5)
 
-    # גרף קלוריות
-    st.subheader("🔥 פריטים עם הכי הרבה קלוריות")
-    if 'Calories' in filtered.columns and 'Item' in filtered.columns:
-        top = filtered[['Item', 'Calories']].dropna().sort_values('Calories', ascending=False).head(10)
-        st.bar_chart(top.set_index('Item'))
-    else:
-        st.warning("לא נמצאו עמודות 'Item' או 'Calories' להצגת גרף.")
-else:
-    st.warning("⚠️ לא נמצאה עמודת Company בקובץ הנתונים.")
+# Footer
+st.markdown("---")
+st.markdown("App created by Lee Lior · 2025 · Reichman University")
