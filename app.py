@@ -13,7 +13,7 @@ st.set_page_config(page_title="Fast Food Nutrition Dashboard", layout="wide", pa
 st.markdown("""
     <style>
     body {
-        background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+        background: linear-gradient(to right, #fff6e5, #ffe0b2);
     }
     .stApp {
         background: #ffffff;
@@ -24,10 +24,10 @@ st.markdown("""
         padding-top: 2rem;
     }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #2c3e50;
+        color: #4e342e;
     }
     .card {
-        background-color: #fdfdfd;
+        background-color: #fff8e1;
         padding: 15px;
         border-radius: 12px;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
@@ -39,23 +39,22 @@ st.markdown("""
         box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
     }
     .stSidebar {
-        background: #f0f4f8;
+        background: #fff3e0;
     }
     .stTabs [data-baseweb="tab"] {
         font-size: 18px;
         font-weight: bold;
-        color: #333;
-        background-color: #e0eafc;
-        border-radius: 5px 5px 0 0;
+        background-color: #ffe0b2;
+        color: #4e342e;
+        border-radius: 10px 10px 0 0;
         margin-right: 4px;
-        padding: 8px;
+        padding: 10px;
     }
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: #c6dafc;
-        color: #000;
+        background-color: #ffcc80;
     }
     .download-button {
-        background-color: #ffcc99;
+        background-color: #ffcc80;
         color: black;
         border-radius: 5px;
         padding: 6px 10px;
@@ -63,17 +62,20 @@ st.markdown("""
         font-weight: bold;
     }
     .download-button:hover {
-        background-color: #ffb366;
+        background-color: #ffb74d;
     }
-    .logo-container {
-        text-align: center;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        animation: fadein 1.8s;
+    @keyframes slideIn {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
-    @keyframes fadein {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+    .stApp h1 {
+        animation: slideIn 0.8s ease-in-out;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -82,13 +84,6 @@ st.markdown("""
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/1046/1046784.png", width=80)
 st.sidebar.title("🍴 Navigation")
 st.sidebar.markdown("Welcome to the Fast Food Nutrition Explorer!")
-
-# --- Logo Animation ---
-st.markdown("""
-<div class="logo-container">
-    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" width="120">
-</div>
-""", unsafe_allow_html=True)
 
 # --- Load Data ---
 @st.cache_data
@@ -148,7 +143,7 @@ with tabs[0]:
 with tabs[1]:
     st.subheader("🍟 Average Calories, Sodium and Fat")
     fig1, ax1 = plt.subplots(figsize=(8, 4))
-    filtered_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax1, color=['#9ecae1', '#fdd0a2', '#fdae6b'])
+    filtered_df[['Caloric Value', 'Sodium', 'Fat']].mean().plot(kind='barh', ax=ax1, color=['#ffcc80', '#ffab91', '#ffe082'])
     ax1.set_title("Average Values of Calories, Sodium and Fat")
     ax1.set_xlabel("Amount")
     st.pyplot(fig1)
@@ -156,7 +151,7 @@ with tabs[1]:
 with tabs[2]:
     st.subheader("🍗 Protein Distribution")
     fig2, ax2 = plt.subplots(figsize=(8, 4))
-    sns.histplot(filtered_df['Protein'], bins=30, kde=True, color="#a1d99b", ax=ax2)
+    sns.histplot(filtered_df['Protein'], bins=30, kde=True, color="#ffb74d", ax=ax2)
     ax2.set_title("Distribution of Protein Values")
     ax2.set_xlabel("Protein (g)")
     st.pyplot(fig2)
@@ -165,7 +160,7 @@ with tabs[3]:
     st.subheader("📊 Average Calories by Food")
     avg_cal = filtered_df.groupby('food')['Caloric Value'].mean().sort_values(ascending=False).head(15)
     fig3, ax3 = plt.subplots(figsize=(10, 5))
-    avg_cal.plot(kind='bar', color='#c6dbef', ax=ax3)
+    avg_cal.plot(kind='bar', color='#ffe082', ax=ax3)
     ax3.set_ylabel("Average Calories")
     ax3.set_title("Top 15 Foods by Average Caloric Value")
     plt.xticks(rotation=45, ha='right')
@@ -176,7 +171,7 @@ with tabs[4]:
     if 'FatCaloriesPercentage' in filtered_df.columns and 'Source File' in filtered_df.columns:
         avg_pct = filtered_df.groupby('Source File')['FatCaloriesPercentage'].mean().sort_values()
         fig4, ax4 = plt.subplots(figsize=(8, 5))
-        avg_pct.plot(kind='barh', color='#ffcc99', ax=ax4)
+        avg_pct.plot(kind='barh', color='#ffab91', ax=ax4)
         ax4.set_title("Fat-Calorie % by Source")
         st.pyplot(fig4)
 
