@@ -5,12 +5,11 @@ import seaborn as sns
 from PIL import Image
 import numpy as np
 import base64
-import time
 
 # --- Page config ---
 st.set_page_config(page_title="Fast Food Nutrition Dashboard", layout="wide", page_icon="🍔")
 
-# --- Enhanced Styling CSS with animations ---
+# --- Enhanced Styling CSS ---
 st.markdown("""
     <style>
     body {
@@ -26,7 +25,6 @@ st.markdown("""
     }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
         color: #2c3e50;
-        animation: fadeIn 1s ease-in-out;
     }
     .card {
         background-color: #fdfdfd;
@@ -46,6 +44,15 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         font-size: 18px;
         font-weight: bold;
+        color: #333;
+        background-color: #e0eafc;
+        border-radius: 5px 5px 0 0;
+        margin-right: 4px;
+        padding: 8px;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #c6dafc;
+        color: #000;
     }
     .download-button {
         background-color: #ffcc99;
@@ -58,9 +65,15 @@ st.markdown("""
     .download-button:hover {
         background-color: #ffb366;
     }
-    @keyframes fadeIn {
-        0% {opacity: 0; transform: translateY(-10px);}
-        100% {opacity: 1; transform: translateY(0);}
+    .logo-container {
+        text-align: center;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        animation: fadein 1.8s;
+    }
+    @keyframes fadein {
+        from { opacity: 0; }
+        to   { opacity: 1; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -69,6 +82,13 @@ st.markdown("""
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/1046/1046784.png", width=80)
 st.sidebar.title("🍴 Navigation")
 st.sidebar.markdown("Welcome to the Fast Food Nutrition Explorer!")
+
+# --- Logo Animation ---
+st.markdown("""
+<div class="logo-container">
+    <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" width="120">
+</div>
+""", unsafe_allow_html=True)
 
 # --- Load Data ---
 @st.cache_data
@@ -93,10 +113,6 @@ st.sidebar.subheader("🔍 Filter Items")
 calories_range = st.sidebar.slider("Calories Range", min_value=cal_min, max_value=cal_max, value=(cal_min, cal_max))
 protein_range = st.sidebar.slider("Protein Range (g)", min_value=prot_min, max_value=prot_max, value=(prot_min, prot_max))
 search_text = st.sidebar.text_input("Search for Food (e.g. burger, salad)", "")
-if st.sidebar.button("🔄 Reset Filters"):
-    calories_range = (cal_min, cal_max)
-    protein_range = (prot_min, prot_max)
-    search_text = ""
 
 filtered_df = full_df[(full_df['Caloric Value'] >= calories_range[0]) &
                       (full_df['Caloric Value'] <= calories_range[1]) &
@@ -107,23 +123,10 @@ if search_text:
     filtered_df = filtered_df[filtered_df['food'].str.contains(search_text, case=False, na=False)]
 
 # --- Header ---
+st.title("🍔 Fast Food Nutrition Dashboard")
 st.markdown("""
-    <h1 style='font-size: 42px; font-weight: bold;'>🍔 Fast Food Nutrition Dashboard</h1>
-    <p style='font-size: 18px;'>Analyze and visualize nutritional information from various fast food items.</p>
-""", unsafe_allow_html=True)
-
-# --- Stat Cards ---
-avg_cals = int(filtered_df['Caloric Value'].mean())
-avg_prot = round(filtered_df['Protein'].mean(), 1)
-avg_fat = round(filtered_df['Fat'].mean(), 1)
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric(label="🔥 Avg Calories", value=f"{avg_cals} kcal")
-with col2:
-    st.metric(label="💪 Avg Protein", value=f"{avg_prot} g")
-with col3:
-    st.metric(label="🧈 Avg Fat", value=f"{avg_fat} g")
+Analyze and visualize nutritional information from various fast food items. Use the tabs below to explore calories, protein, fat, sodium and more.
+""")
 
 # --- Download filtered CSV ---
 def get_table_download_link(df):
@@ -188,4 +191,5 @@ with tabs[5]:
 # --- Footer ---
 st.markdown("---")
 st.markdown("Made with ❤️ by Lee Lior · Reichman University 2025")
+
 
