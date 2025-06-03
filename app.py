@@ -85,3 +85,5 @@ elif section.startswith("5"):
 # --- Footer ---
 st.markdown("---")
 st.markdown("Developed by Lee Lior · Reichman University · 2025")
+
+st.markdown("Developed by Lee Lior · Reichman University · 2025")
